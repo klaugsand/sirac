@@ -1,7 +1,3 @@
 # Compiled source #
 ###################
 *.pyc
-
-# IDE folders #
-###############
-.idea
