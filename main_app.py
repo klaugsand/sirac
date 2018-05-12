@@ -1,5 +1,6 @@
 import time
 import logging
+import os
 
 from transitions import Machine, State
 
@@ -21,14 +22,22 @@ from models.stations import Stations
 from models.station import Station
 
 
-logging.basicConfig(level=logging.ERROR,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s [%(levelname)s] (%(threadName)-10s) %(message)s',
                     datefmt='%Y.%m.%d %H:%M:%S')
 
 
 class MainApp(object):
     def __init__(self):
-        self.display = DisplayDriver(2, 16, debug_mode=False)
+        self.native_mode = False
+        node_name = os.uname()[1]
+        if node_name == 'raspberrypi':
+            self.native_mode = True
+            
+        logging.debug('MainApp.__init__: native_mode {}'.format(self.native_mode))
+
+        self.display = DisplayDriver(2, 16, debug_mode=False, 
+									 native_mode=self.native_mode)
         self.sound = SoundDriver()
 
         self.model = ModelContainer()
@@ -146,7 +155,7 @@ class MainApp(object):
         self.init_state_machine()
         self.init_controllers()
 
-        self.event_handler = EventHandler(name='EventHandler')
+        self.event_handler = EventHandler(name='EventHandler', native_mode=self.native_mode)
         self.event_handler.initialize(self, self.controllers['idle'])
         self.event_handler.start()
 

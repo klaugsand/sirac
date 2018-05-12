@@ -12,7 +12,13 @@ lcd.backlight_enabled = True
 time.sleep(1)
 
 lcd.write_string('Hello world')
-time.sleep(5)
+time.sleep(10)
+
+lcd.backlight_enabled = False
+
+lcd.clear()
+lcd.write_string('Ser du dette?')
+time.sleep(10)
 
 lcd.clear()
 lcd.close()

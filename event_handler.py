@@ -3,14 +3,25 @@ import logging
 import sys
 import select
 
+import RPi.GPIO as GPIO
+
+from time import sleep
+
 
 class EventHandler(threading.Thread):
     EVENT_KEY_ENTER = 1
     EVENT_KEY_BACK = 2
     EVENT_KEY_LEFT = 3
     EVENT_KEY_RIGHT = 4
+    
+    Pin_Enc_A = 23
+    Pin_Enc_B = 24
+    Pin_Enc_Button = 4
+    Pin_Right_Button = 5
+    Pin_Left_Button = 6
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
+
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None, native_mode=False):
         threading.Thread.__init__(self, group=group, target=target, name=name)
 
         self.args = args
@@ -19,7 +30,84 @@ class EventHandler(threading.Thread):
         self.parent = None
         self.receiver = None
 
+        self.native_mode = native_mode
+        logging.debug('EventHandler.__init__: native_mode {}'.format(self.native_mode))
+        
+        self.curr_rotary_a = 1
+        self.curr_rotary_b = 1
+        
+        if self.native_mode is True:
+            self.init_native()
+
         self.exit_event = threading.Event()
+        
+    def rotary_interrupt(self, channel):
+        switch_a = GPIO.input(EventHandler.Pin_Enc_A)
+        switch_b = GPIO.input(EventHandler.Pin_Enc_B)
+
+        # logging.debug('channel: {} - Switch_A: {} - Switch_B: {}'.format(channel, Switch_A, Switch_B))
+
+        if (self.curr_rotary_a == switch_a) and (self.curr_rotary_b == switch_b):
+            return
+
+        self.curr_rotary_a = switch_a
+        self.curr_rotary_b = switch_b
+        
+        event = None
+
+        if (switch_a and switch_b):
+            if channel == EventHandler.Pin_Enc_B:
+                logging.debug('Turn right')
+                event = EventHandler.EVENT_KEY_RIGHT
+            else:
+                logging.debug('Turn left')
+                event = EventHandler.EVENT_KEY_LEFT
+                
+        if event is not None:
+            consumed = self.receiver.handle_event(event)
+            if consumed is False:
+                self.parent.handle_event(event)
+
+    def button_callback(self, channel):
+        event = None
+        
+        # logging.debug('channel: {}'.format(channel))
+        if channel == EventHandler.Pin_Enc_Button:
+            if GPIO.input(EventHandler.Pin_Enc_Button) == GPIO.LOW:
+                logging.debug('Rotary button pressed')
+                event = EventHandler.EVENT_KEY_ENTER
+        elif channel == EventHandler.Pin_Left_Button:
+            if GPIO.input(EventHandler.Pin_Left_Button) == GPIO.LOW:
+                logging.debug('Back button pressed')
+                event = EventHandler.EVENT_KEY_BACK
+        elif channel == EventHandler.Pin_Right_Button:
+            if GPIO.input(EventHandler.Pin_Right_Button) == GPIO.LOW:
+                logging.debug('Enter button pressed')
+                event = EventHandler.EVENT_KEY_ENTER
+                
+        if event is not None:
+            consumed = self.receiver.handle_event(event)
+            if consumed is False:
+                self.parent.handle_event(event)
+
+    def init_native(self):
+        GPIO.setwarnings(True)
+        GPIO.setmode(GPIO.BCM)
+
+        GPIO.setup(EventHandler.Pin_Enc_A, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(EventHandler.Pin_Enc_B, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+        GPIO.add_event_detect(EventHandler.Pin_Enc_A, GPIO.RISING, callback=self.rotary_interrupt)
+        GPIO.add_event_detect(EventHandler.Pin_Enc_B, GPIO.RISING, callback=self.rotary_interrupt)
+
+        GPIO.setup(EventHandler.Pin_Enc_Button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(EventHandler.Pin_Enc_Button, GPIO.BOTH, callback=self.button_callback)
+
+        GPIO.setup(EventHandler.Pin_Left_Button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(EventHandler.Pin_Left_Button, GPIO.BOTH, callback=self.button_callback)
+
+        GPIO.setup(EventHandler.Pin_Right_Button, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(EventHandler.Pin_Right_Button, GPIO.BOTH, callback=self.button_callback)
 
     def initialize(self, parent, receiver):
         logging.debug('EventHandler.initialize: starting')
@@ -57,4 +145,7 @@ class EventHandler(threading.Thread):
             if is_set:
                 logging.info('EventHandler.run: stopping...')
             else:
-                self.check_for_event()
+                if self.native_mode is True:
+                    sleep(0.1)
+                else:
+                    self.check_for_event()

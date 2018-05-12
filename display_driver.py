@@ -1,16 +1,24 @@
-import term
+import logging
+
+# import term
+from RPLCD.i2c import CharLCD
 
 
 class DisplayDriver(object):
-    def __init__(self, rows, cols, debug_mode=False):
+    def __init__(self, rows, cols, debug_mode=False, native_mode=False):
         self.row_count = rows
         self.col_count = cols
         self.debug_mode = debug_mode
+        self.native_mode = native_mode
+        
+        logging.debug('DisplayDriver.__init__: native_mode {}'.format(self.native_mode))
 
         self.change_set = []
 
         self.frame_buffer = None
         self.update_buffer = None
+        
+        self.lcd = None
 
         self.cursor_data = [0, 0, False]
         self.cursor_update = [0, 0, False]
@@ -21,11 +29,19 @@ class DisplayDriver(object):
         self.frame_buffer = []
         self.update_buffer = []
         for index in range(0, self.row_count):
-            self.frame_buffer.append(bytearray(' ' * self.col_count))
-            self.update_buffer.append(bytearray(' ' * self.col_count))
+            self.frame_buffer.append(bytearray(' ' * self.col_count, 'utf8'))
+            self.update_buffer.append(bytearray(' ' * self.col_count, 'utf8'))
 
         if self.debug_mode is False:
-            term.clear()
+            if self.native_mode is True:
+                self.init_lcd()
+			# else:
+            #    term.clear()
+            
+    def init_lcd(self):
+        self.lcd = CharLCD('PCF8574', 0x27)
+        self.lcd.clear()
+        self.lcd.backlight_enabled = False
 
     def get_rows(self):
         return self.row_count
@@ -44,7 +60,7 @@ class DisplayDriver(object):
     def write(self, text, row, left_adjust=True, clear_row=True):
         if row < self.row_count:
             if clear_row is True:
-                self.update_buffer[row] = bytearray(' ' * self.col_count)
+                self.update_buffer[row] = bytearray(' ' * self.col_count, 'utf8')
             else:
                 self.update_buffer[row] = bytearray(self.frame_buffer[row])
 
@@ -123,9 +139,13 @@ class DisplayDriver(object):
                     if self.is_cell_changed(row, col) is True:
                         self.frame_buffer[row][col] = self.update_buffer[row][col]
 
-                term.pos(row + 1, 1)
+                # term.pos(row + 1, 1)
+                self.lcd.cursor_pos = (row, 0)
+                
                 line_str = str(self.update_buffer[row])
-                term.write(line_str)
+                
+                # term.write(line_str)
+                self.lcd.write_string(line_str)
 
         if self.is_cursor_update() is True:
             cursor_text = ' - r:{}, c:{}, v:{}'.format(self.cursor_update[0], self.cursor_update[1], self.cursor_update[2])
