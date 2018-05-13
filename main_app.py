@@ -5,6 +5,7 @@ import os
 from transitions import Machine, State
 
 from display_driver import DisplayDriver
+from display_driver_pcf8574 import DisplayDriverPCF8574
 from sound_driver import SoundDriver
 from event_handler import EventHandler
 from controller.idle_controller import IdleController
@@ -36,8 +37,10 @@ class MainApp(object):
             
         logging.debug('MainApp.__init__: native_mode {}'.format(self.native_mode))
 
-        self.display = DisplayDriver(2, 16, debug_mode=False, 
-									 native_mode=self.native_mode)
+        if self.native_mode is True:
+            self.display = DisplayDriverPCF8574()
+        else:
+            self.display = DisplayDriver(2, 16, debug_mode=False)
         self.sound = SoundDriver()
 
         self.model = ModelContainer()

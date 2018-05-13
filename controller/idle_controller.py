@@ -102,7 +102,7 @@ class IdleController(ControllerBase):
         timestamp = datetime.datetime.now()
 
         clock = timestamp.strftime('%H:%M')
-        self.display_driver.write(clock, 0)
+        self.display_driver.write(clock, 0, commit=False)
 
         alarm = self.get_next_alarm(timestamp)
         self.display_driver.write(alarm, 0, left_adjust=False, clear_row=False)
@@ -111,5 +111,5 @@ class IdleController(ControllerBase):
             volume = 'Volume: {}%'.format(self.sound_driver.get_volume())
             self.display_driver.write(volume, 1)
         else:
-            date = timestamp.strftime('%Y.%m.%d')
+            date = timestamp.strftime('%d.%m.%Y')
             self.display_driver.write(date, 1)
