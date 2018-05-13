@@ -13,6 +13,7 @@ class EventHandler(threading.Thread):
     EVENT_KEY_BACK = 2
     EVENT_KEY_LEFT = 3
     EVENT_KEY_RIGHT = 4
+    EVENT_KEY_EXIT = 5
     
     Pin_Enc_A = 23
     Pin_Enc_B = 24
@@ -35,6 +36,9 @@ class EventHandler(threading.Thread):
         
         self.curr_rotary_a = 1
         self.curr_rotary_b = 1
+        
+        self.last_event = None
+        self.last_event_time = None
         
         if self.native_mode is True:
             self.init_native()
@@ -86,6 +90,9 @@ class EventHandler(threading.Thread):
                 event = EventHandler.EVENT_KEY_ENTER
                 
         if event is not None:
+            if (event == EventHandler.EVENT_KEY_ENTER) and (event == EventHandler.EVENT_KEY_BACK):
+                event = EventHandler.EVENT_KEY_EXIT
+                
             consumed = self.receiver.handle_event(event)
             if consumed is False:
                 self.parent.handle_event(event)
