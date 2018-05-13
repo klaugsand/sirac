@@ -88,6 +88,7 @@ class AlarmConfigController(ControllerBase):
     def set_normal_state(self):
         self.current_state = AlarmConfigController.STATE_NORMAL
         self.update_display()
+        self.display_driver.set_cursor(1, 0, False)
 
     def set_select_state(self):
         self.current_state = AlarmConfigController.STATE_SELECT
@@ -167,7 +168,7 @@ class AlarmConfigController(ControllerBase):
         else:
             self.current_field_pos += delta
             if self.current_field_pos < 0:
-                self.current_field_pos = field_length
+                self.current_field_pos = field_length - 1
             elif self.current_field_pos >= field_length:
                 self.current_field_pos = 0
 

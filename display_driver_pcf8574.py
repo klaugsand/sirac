@@ -5,14 +5,9 @@ from RPLCD.i2c import CharLCD
 
 class DisplayDriverPCF8574(object):
     def __init__(self):
-        # self.row_count = rows
         self.row_count = 2
-        # self.col_count = cols
         self.col_count = 16
-        # self.debug_mode = debug_mode
         
-        # logging.debug('DisplayDriverPCF8574.__init__: native_mode {}'.format(self.native_mode))
-
         self.frame_buffer = None
         self.update_buffer = None
         self.change_set = None
@@ -100,9 +95,9 @@ class DisplayDriverPCF8574(object):
             
             self.lcd.cursor_pos = (self.cursor_data[0], self.cursor_data[1])
             if self.cursor_data[2] is True:
-                self.lcd.cursor_mode = line
+                self.lcd.cursor_mode = 'line'
             else:
-                self.lcd.cursor_mode = hide
+                self.lcd.cursor_mode = 'hide'
 
     def update_display(self):
         self.create_change_set()

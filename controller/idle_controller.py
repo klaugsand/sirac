@@ -19,6 +19,9 @@ class IdleController(ControllerBase):
 
     def activate(self):
         # logging.debug('IdleController.activate')
+
+        self.display_driver.set_cursor(0, 0, False)
+        self.display_driver.clear()
         self.update_display()
 
     def time_signal(self, seconds):
@@ -100,7 +103,7 @@ class IdleController(ControllerBase):
 
     def update_display(self):
         timestamp = datetime.datetime.now()
-
+        
         clock = timestamp.strftime('%H:%M')
         self.display_driver.write(clock, 0, commit=False)
 
