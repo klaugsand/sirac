@@ -2,6 +2,7 @@ import threading
 import logging
 import sys
 import select
+import queue
 
 import RPi.GPIO as GPIO
 
@@ -43,13 +44,12 @@ class EventHandler(threading.Thread):
         if self.native_mode is True:
             self.init_native()
 
+        self.event_queue = queue.Queue()
         self.exit_event = threading.Event()
         
     def rotary_interrupt(self, channel):
         switch_a = GPIO.input(EventHandler.Pin_Enc_A)
         switch_b = GPIO.input(EventHandler.Pin_Enc_B)
-
-        # logging.debug('channel: {} - Switch_A: {} - Switch_B: {}'.format(channel, Switch_A, Switch_B))
 
         if (self.curr_rotary_a == switch_a) and (self.curr_rotary_b == switch_b):
             return
@@ -68,14 +68,11 @@ class EventHandler(threading.Thread):
                 event = EventHandler.EVENT_KEY_LEFT
                 
         if event is not None:
-            consumed = self.receiver.handle_event(event)
-            if consumed is False:
-                self.parent.handle_event(event)
+            self.event_queue.put(event)
 
     def button_callback(self, channel):
         event = None
         
-        # logging.debug('channel: {}'.format(channel))
         if channel == EventHandler.Pin_Enc_Button:
             if GPIO.input(EventHandler.Pin_Enc_Button) == GPIO.LOW:
                 logging.debug('Rotary button pressed')
@@ -86,16 +83,11 @@ class EventHandler(threading.Thread):
                 event = EventHandler.EVENT_KEY_BACK
         elif channel == EventHandler.Pin_Right_Button:
             if GPIO.input(EventHandler.Pin_Right_Button) == GPIO.LOW:
-                logging.debug('Enter button pressed')
-                event = EventHandler.EVENT_KEY_ENTER
-                
-        if event is not None:
-            if (event == EventHandler.EVENT_KEY_ENTER) and (event == EventHandler.EVENT_KEY_BACK):
+                logging.debug('Exit button pressed')
                 event = EventHandler.EVENT_KEY_EXIT
                 
-            consumed = self.receiver.handle_event(event)
-            if consumed is False:
-                self.parent.handle_event(event)
+        if event is not None:
+            self.event_queue.put(event)
 
     def init_native(self):
         GPIO.setwarnings(True)
@@ -153,6 +145,11 @@ class EventHandler(threading.Thread):
                 logging.info('EventHandler.run: stopping...')
             else:
                 if self.native_mode is True:
-                    sleep(0.1)
+                    # sleep(0.1)
+                    event = self.event_queue.get()
+                    logging.debug('EventHandler.run: processing event {}'.format(event))
+                    consumed = self.receiver.handle_event(event)
+                    if consumed is False:
+                        self.parent.handle_event(event)
                 else:
                     self.check_for_event()
