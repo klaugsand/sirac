@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from RPLCD.i2c import CharLCD
 
@@ -12,20 +13,22 @@ class DisplayDriverPCF8574(object):
         self.update_buffer = None
         self.change_set = None
         
+        self.update_lock = threading.RLock()
+        
         self.lcd = None
 
         self.cursor_data = [0, 0, False]
         self.cursor_update = [0, 0, False]
 
-        self.init_lcd()
-        self.setup()
+        self._init_lcd()
+        self._setup()
 
-    def init_lcd(self):
+    def _init_lcd(self):
         self.lcd = CharLCD('PCF8574', 0x27)
         self.lcd.clear()
         self.lcd.backlight_enabled = False
 
-    def setup(self):
+    def _setup(self):
         self.frame_buffer = []
         self.update_buffer = []
         for index in range(0, self.row_count):
@@ -39,6 +42,8 @@ class DisplayDriverPCF8574(object):
         return self.col_count
 
     def clear(self, row=None):
+        self.update_lock.acquire()
+
         if row is None:
             for index in range(0, self.row_count):
                 self.write('', index, clear_row=True)
@@ -46,7 +51,11 @@ class DisplayDriverPCF8574(object):
             if row < self.row_count:
                 self.write('', row, clear_row=True)
 
+        self.update_lock.release()
+
     def write(self, text, row, left_adjust=True, clear_row=True, commit=True):
+        self.update_lock.acquire()
+        
         if row < self.row_count:
             if clear_row is True:
                 self.update_buffer[row] = bytearray(' ' * self.col_count, 'ascii')
@@ -68,17 +77,23 @@ class DisplayDriverPCF8574(object):
                 pos += 1
 
             if commit is True:
-                self.update_display()
+                self._update_display()
+                
+        self.update_lock.release()
 
     def set_cursor(self, row, col, visible):
+        self.update_lock.acquire()
+
         self.cursor_update = []
         self.cursor_update.append(row)
         self.cursor_update.append(col)
         self.cursor_update.append(visible)
 
-        self.update_cursor()
+        self._update_cursor()
 
-    def is_cursor_update(self):
+        self.update_lock.release()
+
+    def _is_cursor_update(self):
         update = False
 
         if (self.cursor_data[0] != self.cursor_update[0]) or \
@@ -88,8 +103,8 @@ class DisplayDriverPCF8574(object):
 
         return update
 
-    def update_cursor(self):
-        if self.is_cursor_update() is True:
+    def _update_cursor(self):
+        if self._is_cursor_update() is True:
             # cursor_text = ' - r:{}, c:{}, v:{}'.format(self.cursor_update[0], self.cursor_update[1], self.cursor_update[2])
             self.cursor_data = self.cursor_update
             
@@ -99,12 +114,12 @@ class DisplayDriverPCF8574(object):
             else:
                 self.lcd.cursor_mode = 'hide'
 
-    def update_display(self):
-        self.create_change_set()
+    def _update_display(self):
+        self._create_change_set()
         self.lcd.backlight_enabled = True
-        self.show_display()
+        self._show_display()
 
-    def is_cell_changed(self, row, col):
+    def _is_cell_changed(self, row, col):
         is_changed = False
 
         for item in self.change_set:
@@ -114,7 +129,7 @@ class DisplayDriverPCF8574(object):
 
         return is_changed
 
-    def create_change_set(self):
+    def _create_change_set(self):
         self.change_set = []
         for row in range(0, self.row_count):
             for col in range(0, self.col_count):
@@ -122,11 +137,11 @@ class DisplayDriverPCF8574(object):
                     item = (row, col)
                     self.change_set.append(item)
 
-    def show_display(self):
+    def _show_display(self):
         if len(self.change_set) > 0:
             for row in range(0, self.row_count):
                 for col in range(0, self.col_count):
-                    if self.is_cell_changed(row, col) is True:
+                    if self._is_cell_changed(row, col) is True:
                         self.frame_buffer[row][col] = self.update_buffer[row][col]
 
                         self.lcd.cursor_pos = (row, col)
