@@ -1,6 +1,7 @@
 import logging
 
 from event_handler import EventHandler
+from sound_driver import SoundDriver
 from controller.controller_base import ControllerBase
 
 
@@ -9,8 +10,13 @@ class StationsController(ControllerBase):
         ControllerBase.__init__(self, state_name, state_machine, display_driver, model)
 
         self.menu_pos = 0
+        self.uri_playing = None
 
         self.station_model = model.get_model('stations')
+        self.sound_driver = None
+
+    def initialize(self, sound_driver):
+        self.sound_driver = sound_driver
 
     def activate(self):
         logging.debug('StationsController.activate')
@@ -46,10 +52,19 @@ class StationsController(ControllerBase):
         return True
 
     def handle_selection(self):
-        stations = self.station_model.get_stations()
-        uri = stations[self.menu_pos].uri
+        if self.uri_playing is None:
+            stations = self.station_model.get_stations()
+            self.uri_playing = stations[self.menu_pos].uri
 
-        logging.debug('StationsController.handle_selection: playing - {}'.format(uri))
+            logging.debug('StationsController.handle_selection: start playback - {}'.format(self.uri_playing))
+            
+            self.sound_driver.play(self.uri_playing)
+        else:
+            self.uri_playing = None
+            
+            logging.debug('StationsController.handle_selection: stop playback')
+            
+            self.sound_driver.stop()
 
         return True
 

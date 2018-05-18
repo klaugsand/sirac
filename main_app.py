@@ -117,6 +117,7 @@ class MainApp(object):
         self.controllers['alarm_config'] = AlarmConfigController('alarm_config', self.state_machine, self.display, self.model)
 
         self.controllers['idle'].initialize(self.sound)
+        self.controllers['stations'].initialize(self.sound)
 
         self.controllers['idle'].activate()
 
