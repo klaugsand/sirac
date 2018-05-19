@@ -27,6 +27,7 @@ class AlarmsController(ControllerBase):
             menu_item = [alarm.name, self.edit_alarm]
             self.menu_items.append(menu_item)
 
+    '''
     def time_signal(self, seconds):
         timestamp = datetime.datetime.now()
         time_now = datetime.time(hour=timestamp.time().hour, minute=timestamp.time().minute)
@@ -37,7 +38,8 @@ class AlarmsController(ControllerBase):
         for alarm in active_alarms:
             if (time_now == alarm.trigger_time) and (alarm.trigger_days[day_now] is True):
                 logging.debug('AlarmsController.time_signal: activate alarm: {}'.format(alarm))
-
+    '''
+    
     def create_alarm(self):
         logging.debug('AlarmsController.create_alarm')
 

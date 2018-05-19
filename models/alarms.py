@@ -11,6 +11,8 @@ class Alarms(object):
         self.alarm_sel = -1
 
         self.read_alarms_file()
+        # self.calc_next_trigger_day()
+        self.set_next_trigger(False)
 
     def read_alarms_file(self):
         try:
@@ -25,6 +27,9 @@ class Alarms(object):
             logging.error("Alarms.read_alarms_file: failed to parse file %s", self.alarm_file)
 
     def write_alarms_file(self):
+        self.calc_next_trigger_day()
+        self.set_next_trigger(True)
+
         try:
             # with io.open(self.alarm_file, 'w', encoding='utf-8') as alarm_file:
             with open(self.alarm_file, 'w') as alarm_file:
@@ -34,6 +39,9 @@ class Alarms(object):
             logging.error("Alarms.write_alarms_file: failed to write file %s", self.alarm_file)
 
     def add_alarm(self, alarm, update_sel=False):
+        alarm.calc_next_trigger_day()
+        alarm.set_next_trigger(False)
+        
         self.alarms.append(alarm)
         self.write_alarms_file()
 
@@ -65,3 +73,13 @@ class Alarms(object):
                 active_alarms.append(alarm)
 
         return active_alarms
+
+    '''
+    def calc_next_trigger_day(self):
+        for alarm in self.alarms:
+            alarm.calc_next_trigger_day()
+    '''
+    
+    def set_next_trigger(self, cancel_existing):
+        for alarm in self.alarms:
+            alarm.set_next_trigger(cancel_existing)
