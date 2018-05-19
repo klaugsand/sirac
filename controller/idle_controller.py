@@ -58,36 +58,10 @@ class IdleController(ControllerBase):
     def get_next_alarm(self, timestamp):
         time_str = ''
 
-        time_now = datetime.time(hour=timestamp.time().hour, minute=timestamp.time().minute)
-        day_now = timestamp.weekday()
-
-        # time_now = datetime.time(hour=13, minute=40)
-        # time_now = datetime.time(hour=21, minute=40)
-        # day_now = 2
-
-        rest_of_day = 24 * 60 - time_now.hour * 60 - time_now.minute
-
         alarm_dist = []
         active_alarms = self.alarm_model.get_active_alarms()
         for alarm in active_alarms:
-            diff = -1
-            today = None
-
-            if (time_now <= alarm.trigger_time) and (alarm.trigger_days[day_now] is True):
-                today = True
-                diff = alarm.trigger_time.hour * 60 + alarm.trigger_time.minute - time_now.hour * 60 - time_now.minute
-            else:
-                today = False
-                days = 0
-                for index in range(0, 7):
-                    days += 1
-                    day = (day_now + 1 + index) % 7
-                    if alarm.trigger_days[day] is True:
-                        break
-
-                day_minutes = (days - 1) * 24 * 60
-                dist = day_minutes + alarm.trigger_time.hour * 60 + alarm.trigger_time.minute
-                diff = rest_of_day + dist
+            diff, today = alarm.calc_trigger_diff(timestamp)
 
             item = (alarm, diff, today)
             alarm_dist.append(item)

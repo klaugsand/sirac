@@ -47,15 +47,10 @@ class Alarm(object):
 
         logging.debug('Alarm.calc_next_trigger_day: next_trigger_day - {}'.format(self.next_trigger_day))
     '''
-
-    def set_next_trigger(self, cancel_existing):
-        logging.debug('Alarm.set_next_trigger: trigger_time - {}, trigger_days - {}'.format(self.trigger_time, self.trigger_days))
-
-        timestamp = datetime.datetime.now()
+    
+    def calc_trigger_diff(self, timestamp):
         time_now = datetime.time(hour=timestamp.time().hour, minute=timestamp.time().minute)
         day_now = timestamp.weekday()
-
-        logging.debug('Alarm.set_next_trigger: time_now - {}, day_now - {}'.format(time_now, day_now))
 
         diff = -1
         today = None
@@ -77,6 +72,14 @@ class Alarm(object):
             rest_of_day = 24 * 60 - time_now.hour * 60 - time_now.minute
             diff = rest_of_day + dist
             
+        return diff, today
+
+    def set_next_trigger(self, cancel_existing):
+        logging.debug('Alarm.set_next_trigger: trigger_time - {}, trigger_days - {}'.format(self.trigger_time, self.trigger_days))
+
+        timestamp = datetime.datetime.now()
+        diff, today = self.calc_trigger_diff(timestamp)
+
         logging.debug('Alarm.set_next_trigger: today - {}, diff - {}'.format(today, diff))
 
         trigger_time = timestamp + datetime.timedelta(minutes = diff)
