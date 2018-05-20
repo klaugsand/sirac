@@ -6,14 +6,14 @@ import logging
 class Alarms(object):
     def __init__(self):
         self.alarm_file = './data/alarms.json'
-
+        
         self.alarms = []
         self.alarm_sel = -1
 
         self.read_alarms_file()
         # self.calc_next_trigger_day()
         self.set_next_trigger(False)
-
+        
     def read_alarms_file(self):
         try:
             # with io.open(self.alarm_file, 'r', encoding='utf-8') as alarm_file:
@@ -27,7 +27,7 @@ class Alarms(object):
             logging.error("Alarms.read_alarms_file: failed to parse file %s", self.alarm_file)
 
     def write_alarms_file(self):
-        self.calc_next_trigger_day()
+        # self.calc_next_trigger_day()
         self.set_next_trigger(True)
 
         try:

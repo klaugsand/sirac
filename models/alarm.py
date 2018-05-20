@@ -2,6 +2,8 @@ import datetime
 import logging
 import threading
 
+from pydispatch import dispatcher
+
 
 class Alarm(object):
     def __init__(self):
@@ -23,6 +25,7 @@ class Alarm(object):
     def trigger(self):
         logging.debug('Alarm.trigger: name - {}, trigger_time - {}, trigger_days - {}'.format(self.name, self.trigger_time, self.trigger_days))
         self.set_next_trigger(False)
+        dispatcher.send(signal='ALARM_TRIGGER', sender=self)
     
     '''
     def calc_next_trigger_day(self):

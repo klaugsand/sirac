@@ -9,6 +9,7 @@ from display_driver_pcf8574 import DisplayDriverPCF8574
 from sound_driver import SoundDriver
 from event_handler import EventHandler
 from controller.idle_controller import IdleController
+from controller.alarm_controller import AlarmController
 from controller.main_menu_controller import MainMenuController
 from controller.alarms_controller import AlarmsController
 from controller.stations_controller import StationsController
@@ -58,6 +59,8 @@ class MainApp(object):
             # {'trigger': 'button_right', 'source': 'idle', 'dest': 'main_menu'},
             # {'trigger': 'button_left', 'source': 'idle', 'dest': 'main_menu'},
             {'trigger': 'button_enter', 'source': 'idle', 'dest': 'main_menu'},
+
+            {'trigger': 'button_back', 'source': 'alarm', 'dest': 'idle'},
 
             {'trigger': 'button_back', 'source': 'main_menu', 'dest': 'idle'},
             {'trigger': 'select_alarms', 'source': 'main_menu', 'dest': 'alarms'},
@@ -109,6 +112,7 @@ class MainApp(object):
 
     def init_controllers(self):
         self.controllers['idle'] = IdleController('idle', self.state_machine, self.display, self.model)
+        self.controllers['alarm'] = AlarmController('alarm', self.state_machine, self.display, self.model)
         self.controllers['main_menu'] = MainMenuController('main_menu', self.state_machine, self.display, self.model)
         self.controllers['alarms'] = AlarmsController('alarms', self.state_machine, self.display, self.model)
         self.controllers['stations'] = StationsController('stations', self.state_machine, self.display, self.model)
@@ -117,6 +121,7 @@ class MainApp(object):
         self.controllers['alarm_config'] = AlarmConfigController('alarm_config', self.state_machine, self.display, self.model)
 
         self.controllers['idle'].initialize(self.sound)
+        self.controllers['alarm'].initialize(self.sound)
         self.controllers['stations'].initialize(self.sound)
 
         self.controllers['idle'].activate()
