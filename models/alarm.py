@@ -58,7 +58,8 @@ class Alarm(object):
         diff = -1
         today = None
 
-        if (time_now <= self.trigger_time) and (self.trigger_days[day_now] is True):
+        # if (time_now <= self.trigger_time) and (self.trigger_days[day_now] is True):
+        if (time_now < self.trigger_time) and (self.trigger_days[day_now] is True):
             today = True
             diff = self.trigger_time.hour * 60 + self.trigger_time.minute - time_now.hour * 60 - time_now.minute
         else:
@@ -81,20 +82,23 @@ class Alarm(object):
         logging.debug('Alarm.set_next_trigger: trigger_time - {}, trigger_days - {}'.format(self.trigger_time, self.trigger_days))
 
         timestamp = datetime.datetime.now()
+        logging.debug('Alarm.set_next_trigger: timestamp - {}'.format(timestamp))
+
         diff, today = self.calc_trigger_diff(timestamp)
 
         logging.debug('Alarm.set_next_trigger: today - {}, diff - {}'.format(today, diff))
 
         trigger_time = timestamp + datetime.timedelta(minutes = diff)
+        logging.debug('Alarm.set_next_trigger: trigger_time - {}'.format(trigger_time))
         trigger_time = trigger_time - datetime.timedelta(seconds = trigger_time.second)
-        sleep_time = trigger_time - timestamp
+        sleep_time = (trigger_time - timestamp).total_seconds()
 
-        logging.debug('Alarm.set_next_trigger: trigger_time - {}, sleep_time - {}'.format(trigger_time, sleep_time.seconds))
+        logging.debug('Alarm.set_next_trigger: trigger_time - {}, sleep_time - {}'.format(trigger_time, sleep_time))
         
         if cancel_existing is True:
             if self.timer is not None:
                 logging.debug('Alarm.set_next_trigger: cancelling timer')
                 self.timer.cancel()
             
-        self.timer = threading.Timer(sleep_time.seconds, self.trigger)
+        self.timer = threading.Timer(sleep_time, self.trigger)
         self.timer.start()

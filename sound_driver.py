@@ -16,7 +16,7 @@ class SoundDriver(object):
         self.client.connect('localhost', 6600)
         
         status = self.client.status()
-        self.current_volume = status['volume']
+        self.current_volume = int(status['volume'])
         
     def cleanup(self):
         self.access_lock.acquire()
